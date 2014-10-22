@@ -1,12 +1,24 @@
 #!/usr/bin/env python
-
 import os.path
 import subprocess
 import datetime
 import gzip
 
-BACKUP_DIR = '/root/backups/{app}/'
+BACKUP_ROOT = os.environ.get('BACKUP_ROOT', '/var/backups/data')
+BACKUP_DIR = os.path.join(BACKUP_ROOT, '{app}/')
 BACKUP_DEST = os.path.join(BACKUP_DIR, '{item}')
+
+
+def create_app_dir(app):
+    path = BACKUP_DIR.format(app=app)
+    try:
+        os.makedirs(path)
+    except OSError, exp:
+        if exp.message.startswith('File exists'):
+            pass
+    # root, backup
+    os.chown(path, 0, 34)
+    os.chmod(path, 0770)
 
 
 def get_output(cmd):
@@ -25,11 +37,7 @@ apps = get_output(['dokku', 'apps:list'])
 
 # Create backup dirs
 for app in apps:
-    try:
-        os.makedirs(BACKUP_DIR.format(app=app), 0700)
-    except OSError, exp:
-        if exp.message.startswith('File exists'):
-            pass
+    create_app_dir(app)
 
 # Get postgres dbs
 dbs = {}
@@ -44,4 +52,8 @@ for app, dbs in dbs.items():
         output = subprocess.check_output(['dokku', 'postgresql:dump', app, db])
         with gzip.open(BACKUP_DEST.format(app=app, item=filename), 'wb') as f:
             f.write(output)
-g
+
+# Backup dokku
+create_app_dir('dokku')
+filename = 'dokku_backup_{date}.tar'.format(date=now.isoformat())
+get_output(['dokku', 'backup:export', BACKUP_DEST.format(app='dokku', item=filename)])
