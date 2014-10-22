@@ -48,7 +48,7 @@ for app in apps:
 # Backup dbs
 for app, dbs in dbs.items():
     for db in dbs:
-        filename = 'postgresql_backup_rattic_rattic_{date}.sql.gz'.format(date=now.isoformat())
+        filename = 'postgresql_backup_{db}_{date}.sql.gz'.format(db=db, date=now.isoformat())
         output = subprocess.check_output(['dokku', 'postgresql:dump', app, db])
         with gzip.open(BACKUP_DEST.format(app=app, item=filename), 'wb') as f:
             f.write(output)
