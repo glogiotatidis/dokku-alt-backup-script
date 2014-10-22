@@ -57,3 +57,6 @@ for app, dbs in dbs.items():
 create_app_dir('dokku')
 filename = 'dokku_backup_{date}.tar'.format(date=now.isoformat())
 get_output(['dokku', 'backup:export', BACKUP_DEST.format(app='dokku', item=filename)])
+
+# Chown
+get_output(['chown', '-R', 'backup:backup', BACKUP_ROOT])
