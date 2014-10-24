@@ -60,4 +60,4 @@ filename = 'dokku_backup_{date}.tar'.format(date=now.isoformat())
 get_output([DOKKU_CMD, 'backup:export', BACKUP_DEST.format(app='dokku', item=filename)])
 
 # Chown
-get_output(['chown', '-R', 'backup:backup', BACKUP_ROOT])
+get_output(['/bin/chown', '-R', 'backup:backup', BACKUP_ROOT])
