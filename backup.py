@@ -8,6 +8,7 @@ DOKKU_CMD = '/usr/local/bin/dokku'
 BACKUP_ROOT = os.environ.get('BACKUP_ROOT', '/var/backups/data')
 BACKUP_DIR = os.path.join(BACKUP_ROOT, '{app}/')
 BACKUP_DEST = os.path.join(BACKUP_DIR, '{item}')
+VOLUME_BACKUP_CMD = '/usr/bin/docker run --volumes-from volume_data_{volume_name} -v {dest}:/tmp/backup ubuntu tar cfj /tmp/backup/volume_name_{volume_name}_{date}.tar.bz2 {path}'
 
 
 def create_app_dir(app):
@@ -53,6 +54,18 @@ for app, dbs in dbs.items():
         output = subprocess.check_output([DOKKU_CMD, 'postgresql:dump', app, db])
         with gzip.open(BACKUP_DEST.format(app=app, item=filename), 'wb') as f:
             f.write(output)
+
+# Backup volumes
+create_app_dir('_volumes')
+
+
+volumes = get_output([DOKKU_CMD, 'volume:list'])
+for volume in volumes:
+    volume_path = get_output([DOKKU_CMD, 'volume:info', volume])[0]
+    cmd = VOLUME_BACKUP_CMD.format(volume_name=volume,
+                                   dest=BACKUP_DIR.format(app='_volumes'),
+                                   date=now.isoformat(), path=volume_path)
+    get_output(cmd.split())
 
 # Backup dokku
 create_app_dir('dokku')
